@@ -95,4 +95,57 @@ component output="false" rest="true" restPath="categories" displayName="Categori
         }
         return response;
     }
+    /**
+     * UPDATE an existing category
+     * PUT /api/categories/{id}
+     */
+    function update(
+        required numeric id,
+        string name,
+        string description,
+        string color
+    ) access="remote" httpMethod="PUT" restPath="{id}" returnFormat="json" output="false" {
+        var response = {};
+
+        try {
+            var user = authorize();
+            var repo = new repositories.CategoryRepository();
+            
+            // Check if category exists and belongs to user
+            var existing = repo.findById(arguments.id, user.sub);
+            if (existing.recordCount == 0) {
+                response = {status="error", message="Category not found"};
+                return response;
+            }
+            
+            // Check if new name conflicts with existing category
+            if (structKeyExists(arguments, "name") && len(trim(arguments.name))) {
+                if (repo.nameExistsForUser(arguments.name, user.sub, arguments.id)) {
+                    response = {status="error", message="Category name already exists"};
+                    return response;
+                }
+            }
+            
+            var updateArgs = {id=arguments.id, userId=user.sub};
+            if (structKeyExists(arguments, "name")) updateArgs.name = arguments.name;
+            if (structKeyExists(arguments, "description")) updateArgs.description = arguments.description;
+            if (structKeyExists(arguments, "color")) updateArgs.color = arguments.color;
+            
+            var success = repo.update(argumentCollection=updateArgs);
+            
+            if (success) {
+                response = {
+                    status = "success",
+                    message = "Category updated successfully"
+                };
+            } else {
+                response = {status="error", message="Failed to update category"};
+            }
+
+        } catch (any e) {
+            response = {status="error", message=e.message};
+        }
+
+        return response;
+    }
 }

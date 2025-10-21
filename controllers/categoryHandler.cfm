@@ -30,6 +30,32 @@
                     response.message = result.message;
                 }
                 break;
+                case "update":
+                // Update existing category
+                if (NOT structKeyExists(form, "id")) {
+                    response.message = "Category ID is required";
+                    break;
+                }
+                
+                updateArgs = {
+                    id = form.id,
+                    userId = session.userId
+                };
+                
+                if (structKeyExists(form, "name")) updateArgs.name = form.name;
+                if (structKeyExists(form, "description")) updateArgs.description = form.description;
+                if (structKeyExists(form, "color")) updateArgs.color = form.color;
+                
+                success = categoryRepo.update(argumentCollection=updateArgs);
+                
+                if (success) {
+                    response.success = true;
+                    response.message = "Category updated successfully";
+                } else {
+                    response.message = "Failed to update category";
+                }
+                break;
+
             default:
                 response.message = "Invalid action";
         }
