@@ -30,7 +30,7 @@
                     response.message = result.message;
                 }
                 break;
-                case "update":
+            case "update":
                 // Update existing category
                 if (NOT structKeyExists(form, "id")) {
                     response.message = "Category ID is required";
