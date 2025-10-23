@@ -76,6 +76,42 @@ component extends="BaseRepository" displayname="CategoryRepository" hint="Reposi
         var result = executeQuery(sql, params);
         return result.count[1] > 0;
     }
+    /**
+     * Update category
+     */
+    public boolean function update(required numeric id, required numeric userId, string name, string description, string color) {
+        var setParts = [];
+        var params = {
+            id = {value=arguments.id, type="cf_sql_integer"},
+            userId = {value=arguments.userId, type="cf_sql_integer"}
+        };
+        
+        if (structKeyExists(arguments, "name") && len(trim(arguments.name))) {
+            arrayAppend(setParts, "name = :name");
+            params.name = {value=trim(arguments.name), type="cf_sql_varchar"};
+        }
+        
+        if (structKeyExists(arguments, "description")) {
+            arrayAppend(setParts, "description = :description");
+            params.description = {value=arguments.description, type="cf_sql_varchar"};
+        }
+        
+        if (structKeyExists(arguments, "color") && len(trim(arguments.color))) {
+            arrayAppend(setParts, "color = :color");
+            params.color = {value=arguments.color, type="cf_sql_varchar"};
+        }
+        
+        if (arrayLen(setParts) == 0) return false;
+        
+        var sql = "UPDATE categories SET " & arrayToList(setParts, ", ") & " WHERE id = :id AND user_id = :userId";
+        
+        try {
+            executeUpdate(sql, params);
+            return true;
+        } catch (any e) {
+            return false;
+        }
+    }
 
     /**
      * Get category usage count (number of expenses)

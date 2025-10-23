@@ -2,6 +2,20 @@
 let currentExpenseId = null;
 let currentCategoryId = null;
 
+function showSection(sectionId) {
+    document.querySelectorAll('.dashboard-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    document.getElementById(sectionId).classList.add('active');
+    event.target.closest('.menu-item').classList.add('active');
+    window.location.hash = sectionId;
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Check URL hash and show corresponding section
@@ -162,19 +176,36 @@ function closeCategoryModal() {
     currentCategoryId = null;
 }
 
-// Simplified category save - just prepare the form and let it submit naturally
-function prepareCategory(event) {
-    // No need to prevent default - let the form submit
-    // Just ensure the action field is set correctly (already done in open/edit functions)
+function editCategory(category) {
+    document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+    document.getElementById('categoryId').value = category.id;
+    document.getElementById('categoryAction').value = 'update';
+    document.getElementById('categoryName').value = category.name;
+    document.getElementById('categoryDescription').value = category.description || '';
+    document.getElementById('categoryColor').value = category.color;
     
-    // Optional: Show a loading indicator
+    document.getElementById('categoryModal').style.display = 'block';
+    currentCategoryId = category.id;
+}
+
+// Read dataset from Edit button and open modal
+function editCategoryFromElement(el) {
+    const category = {
+        id: parseInt(el.dataset.id, 10),
+        name: el.dataset.name || '',
+        description: el.dataset.description || '',
+        color: el.dataset.color || '#FF8C55'
+    };
+    editCategory(category);
+}
+
+function prepareCategory(event) {
     const submitBtn = event.target.querySelector('button[type="submit"]');
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="icon icon-spinner"></span> Saving...';
     }
     
-    // Allow form to submit
     return true;
 }
 
