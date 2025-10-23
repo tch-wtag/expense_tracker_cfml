@@ -429,6 +429,100 @@ function createCategoryViaForm(data) {
     form.submit();
 }
 
+// Store the category to be deleted
+let categoryToDelete = null;
+
+function deleteCategory(id, name) {
+    // Store the category info and show custom confirmation modal
+    categoryToDelete = { id: id, name: name };
+    expenseToDelete = null; // Reset expense
+    
+    const message = `Are you sure you want to delete the category "${name}"? This will remove the category reference from all associated expenses.`;
+    document.getElementById('deleteConfirmMessage').textContent = message;
+    document.getElementById('deleteConfirmModal').style.display = 'block';
+}
+
+function closeDeleteConfirm() {
+    document.getElementById('deleteConfirmModal').style.display = 'none';
+    expenseToDelete = null;
+    categoryToDelete = null;
+}
+
+function confirmDelete() {
+    // Check if deleting expense or category
+    if (expenseToDelete) {
+        confirmDeleteExpense();
+    } else if (categoryToDelete) {
+        confirmDeleteCategory();
+    } else {
+        closeDeleteConfirm();
+    }
+}
+
+function confirmDeleteCategory() {
+    if (!categoryToDelete) {
+        closeDeleteConfirm();
+        return;
+    }
+    
+    const id = categoryToDelete.id;
+    closeDeleteConfirm();
+    
+    const token = sessionStorage.getItem('jwt_token');
+    
+    if (!token) {
+        // If no token, use session-based approach with direct form POST
+        deleteCategoryViaForm(id);
+        return;
+    }
+    
+    fetch('/rest/categories/' + id, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.status === 'success') {
+            showNotification('Category deleted successfully!', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        } else {
+            showNotification('Error: ' + result.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Failed to delete category. Please try again.', 'error');
+    });
+}
+
+// Fallback to session-based form submission
+function deleteCategoryViaForm(id) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/controllers/categoryHandler.cfm';
+    
+    const idInput = document.createElement('input');
+    idInput.type = 'hidden';
+    idInput.name = 'id';
+    idInput.value = id;
+    form.appendChild(idInput);
+    
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = 'delete';
+    form.appendChild(actionInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+
 
 // ============= UTILITY FUNCTIONS =============
 // Close modals when clicking outside

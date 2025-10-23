@@ -133,4 +133,51 @@ component output="false" rest="true" restPath="categories" displayName="Categori
 
         return response;
     }
+
+    /**
+     * DELETE a category
+     * DELETE /api/categories/{id}
+     */
+    function remove(required numeric id) access="remote" httpMethod="DELETE" restPath="{id}" returnFormat="json" output="false" {
+        var response = {};
+
+        try {
+            var user = authorize();
+            var categoryRepo = new repositories.CategoryRepository();
+            
+            // Check if category exists and belongs to user
+            var existing = categoryRepo.findById(arguments.id, user.sub);
+            if (existing.recordCount == 0) {
+                response = {status="error", message="Category not found"};
+                return response;
+            }
+            
+            // Check if category is in use
+            var usageCount = categoryRepo.getUsageCount(arguments.id, user.sub);
+            if (usageCount > 0) {
+                response = {
+                    status = "warning",
+                    message = "This category is used in " & usageCount & " expense(s). Deleting it will set those expenses' category to null.",
+                    usageCount = usageCount
+                };
+                // Still allow deletion - foreign key is set to ON DELETE SET NULL
+            }
+            
+            var success = categoryRepo.delete(arguments.id, user.sub);
+            
+            if (success) {
+                response = {
+                    status = "success",
+                    message = "Category deleted successfully"
+                };
+            } else {
+                response = {status="error", message="Failed to delete category"};
+            }
+
+        } catch (any e) {
+            response = {status="error", message=e.message};
+        }
+
+        return response;
+    }
 }
