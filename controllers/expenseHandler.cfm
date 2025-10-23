@@ -74,6 +74,22 @@
                     response.message = "Failed to update expense";
                 }
                 break;
+            case "delete":
+                // Delete expense
+                if (NOT structKeyExists(form, "id")) {
+                    response.message = "Expense ID is required";
+                    break;
+                }
+                
+                success = expenseRepo.delete(form.id, session.userId);
+                
+                if (success) {
+                    response.success = true;
+                    response.message = "Expense deleted successfully";
+                } else {
+                    response.message = "Failed to delete expense";
+                }
+                break;
                 
             default:
                 response.message = "Invalid action";
