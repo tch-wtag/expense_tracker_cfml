@@ -1,4 +1,4 @@
-component output="false" rest="true" restPath="categories" displayName="CategoriesController" {
+component output="false" rest="true" restPath="categories" displayName="CategoriesController" extends="BaseRestController" {
     /**
      * GET all categories for the authenticated user
      * GET /api/categories
