@@ -142,4 +142,23 @@ component extends="BaseRepository" displayname="ExpenseRepository" hint="Reposit
             return false;
         }
     }
+
+    /**
+     * Delete expense
+     */
+    public boolean function delete(required numeric id, required numeric userId) {
+        var sql = "DELETE FROM expenses WHERE id = :id AND user_id = :userId";
+        
+        var params = {
+            id = {value=arguments.id, type="cf_sql_integer"},
+            userId = {value=arguments.userId, type="cf_sql_integer"}
+        };
+        
+        try {
+            executeUpdate(sql, params);
+            return true;
+        } catch (any e) {
+            return false;
+        }
+    }
 }
