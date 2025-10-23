@@ -61,12 +61,18 @@ component extends="BaseRepository" displayname="ExpenseRepository" hint="Reposit
         
         var params = {
             userId = {value=arguments.userId, type="cf_sql_integer"},
-            categoryId = {value=arguments.categoryId == 0 ? javaCast("null", "") : arguments.categoryId, type="cf_sql_integer", null=arguments.categoryId == 0},
             categoryName = {value=arguments.categoryName, type="cf_sql_varchar"},
             amount = {value=arguments.amount, type="cf_sql_decimal"},
             expenseDate = {value=arguments.expenseDate, type="cf_sql_date"},
             description = {value=arguments.description, type="cf_sql_varchar"}
         };
+        
+        // Handle categoryId with proper NULL handling
+        if (arguments.categoryId == 0) {
+            params.categoryId = {value="", type="cf_sql_integer", null=true};
+        } else {
+            params.categoryId = {value=arguments.categoryId, type="cf_sql_integer", null=false};
+        }
         
         try {
             var result = executeUpdate(sql, params);
@@ -76,6 +82,64 @@ component extends="BaseRepository" displayname="ExpenseRepository" hint="Reposit
             return {success=true, insertId=insertId};
         } catch (any e) {
             return {success=false, message=e.message};
+        }
+    }
+    /**
+     * Update expense
+     */
+    public boolean function update(
+        required numeric id, 
+        required numeric userId,
+        numeric categoryId,
+        string categoryName,
+        numeric amount,
+        date expenseDate,
+        string description
+    ) {
+        var setParts = [];
+        var params = {
+            id = {value=arguments.id, type="cf_sql_integer"},
+            userId = {value=arguments.userId, type="cf_sql_integer"}
+        };
+        
+        if (structKeyExists(arguments, "categoryId")) {
+            arrayAppend(setParts, "category_id = :categoryId");
+            if (arguments.categoryId == 0) {
+                params.categoryId = {value="", type="cf_sql_integer", null=true};
+            } else {
+                params.categoryId = {value=arguments.categoryId, type="cf_sql_integer", null=false};
+            }
+        }
+        
+        if (structKeyExists(arguments, "categoryName")) {
+            arrayAppend(setParts, "category_name = :categoryName");
+            params.categoryName = {value=arguments.categoryName, type="cf_sql_varchar"};
+        }
+        
+        if (structKeyExists(arguments, "amount")) {
+            arrayAppend(setParts, "amount = :amount");
+            params.amount = {value=arguments.amount, type="cf_sql_decimal"};
+        }
+        
+        if (structKeyExists(arguments, "expenseDate")) {
+            arrayAppend(setParts, "expense_date = :expenseDate");
+            params.expenseDate = {value=arguments.expenseDate, type="cf_sql_date"};
+        }
+        
+        if (structKeyExists(arguments, "description")) {
+            arrayAppend(setParts, "description = :description");
+            params.description = {value=arguments.description, type="cf_sql_varchar"};
+        }
+        
+        if (arrayLen(setParts) == 0) return false;
+        
+        var sql = "UPDATE expenses SET " & arrayToList(setParts, ", ") & " WHERE id = :id AND user_id = :userId";
+        
+        try {
+            executeUpdate(sql, params);
+            return true;
+        } catch (any e) {
+            return false;
         }
     }
 }

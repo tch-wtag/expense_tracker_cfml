@@ -37,14 +37,15 @@
                                 <td><cfoutput><strong>৳#numberFormat(allExpenses.amount, "9,999.99")#</strong></cfoutput></td>
                                 <td>
                                     <cfoutput>
-                                        <button class="btn-icon" onclick='editExpense(#serializeJSON({
-                                            id=allExpenses.id,
-                                            categoryId=allExpenses.category_id,
-                                            categoryName=allExpenses.category_name,
-                                            amount=allExpenses.amount,
-                                            expenseDate=dateFormat(allExpenses.expense_date, "yyyy-mm-dd"),
-                                            description=allExpenses.description
-                                        })#)' title="Edit">
+                                        <button class="btn-icon" 
+                                            data-id="#allExpenses.id#"
+                                            data-category-id="#allExpenses.category_id ?: ''#"
+                                            data-category-name="#encodeForHTMLAttribute(allExpenses.category_name)#"
+                                            data-amount="#allExpenses.amount#"
+                                            data-expense-date="#dateFormat(allExpenses.expense_date, 'yyyy-mm-dd')#"
+                                            data-description="#encodeForHTMLAttribute(allExpenses.description ?: '')#"
+                                            onclick="editExpenseFromData(this)" 
+                                            title="Edit">
                                             <span class="icon icon-edit"></span>
                                         </button>
                                         <button class="btn-icon btn-danger" onclick="deleteExpense(#allExpenses.id#)" title="Delete">
@@ -76,8 +77,19 @@
             <input type="hidden" id="expenseId" name="expenseId">
             
             <div class="form-group">
-                <label for="expenseCategory">Category *</label>
-                <select id="expenseCategory" name="categoryId" class="form-select" required>
+                <label for="categoryType">Category *</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="radio" name="categoryType" value="existing" checked onchange="toggleCategoryInput()">
+                        <span>Select Existing</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="radio" name="categoryType" value="custom" onchange="toggleCategoryInput()">
+                        <span>Type Custom</span>
+                    </label>
+                </div>
+                
+                <select id="expenseCategory" name="categoryId" class="form-select">
                     <option value="">Select Category</option>
                     <cfloop query="categories">
                         <cfoutput>
@@ -85,6 +97,17 @@
                         </cfoutput>
                     </cfloop>
                 </select>
+                
+                <input type="text" 
+                       id="customCategoryName" 
+                       name="customCategoryName" 
+                       class="form-input" 
+                       placeholder="Enter custom category name" 
+                       style="display: none;"
+                       maxlength="50">
+                <small style="color: #666; font-size: 0.85em; display: block; margin-top: 5px;">
+                    Tip: Use "Type Custom" for one-time expenses to avoid cluttering your category list
+                </small>
             </div>
 
             <div class="form-group">
@@ -111,5 +134,3 @@
         </form>
     </div>
 </div>
-
-

@@ -58,8 +58,31 @@ function openExpenseModal() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('expenseDate').value = today;
     
+    document.querySelector('input[name="categoryType"][value="existing"]').checked = true;
+    toggleCategoryInput();
+    
     document.getElementById('expenseModal').style.display = 'block';
     currentExpenseId = null;
+}
+
+function toggleCategoryInput() {
+    const categoryType = document.querySelector('input[name="categoryType"]:checked').value;
+    const selectElement = document.getElementById('expenseCategory');
+    const textInput = document.getElementById('customCategoryName');
+    
+    if (categoryType === 'existing') {
+        selectElement.style.display = 'block';
+        selectElement.required = true;
+        textInput.style.display = 'none';
+        textInput.required = false;
+        textInput.value = '';
+    } else {
+        selectElement.style.display = 'none';
+        selectElement.required = false;
+        selectElement.value = '';
+        textInput.style.display = 'block';
+        textInput.required = true;
+    }
 }
 
 function closeExpenseModal() {
@@ -67,6 +90,41 @@ function closeExpenseModal() {
     currentExpenseId = null;
 }
 
+function editExpense(expense) {
+    document.getElementById('expenseModalTitle').textContent = 'Edit Expense';
+    document.getElementById('expenseId').value = expense.id;
+    document.getElementById('expenseAmount').value = expense.amount;
+    document.getElementById('expenseDate').value = expense.expenseDate;
+    document.getElementById('expenseDescription').value = expense.description || '';
+    
+    if (expense.categoryId && expense.categoryId !== '' && expense.categoryId !== 'null') {
+        document.querySelector('input[name="categoryType"][value="existing"]').checked = true;
+        document.getElementById('expenseCategory').value = expense.categoryId;
+    } else {
+        document.querySelector('input[name="categoryType"][value="custom"]').checked = true;
+        document.getElementById('customCategoryName').value = expense.categoryName || '';
+    }
+    toggleCategoryInput();
+    
+    document.getElementById('expenseModal').style.display = 'block';
+    currentExpenseId = expense.id;
+}
+
+
+function editExpenseFromData(button) {
+    const categoryId = button.getAttribute('data-category-id');
+    const expense = {
+        id: button.getAttribute('data-id'),
+        categoryId: (categoryId && categoryId !== 'null' && categoryId !== '') ? categoryId : '',
+        categoryName: button.getAttribute('data-category-name'),
+        amount: button.getAttribute('data-amount'),
+        expenseDate: button.getAttribute('data-expense-date'),
+        description: button.getAttribute('data-description') || ''
+    };
+    
+    console.log('Editing expense:', expense); 
+    editExpense(expense);
+}
 
 function saveExpense(event) {
     event.preventDefault();
@@ -74,30 +132,53 @@ function saveExpense(event) {
     const form = event.target;
     const formData = new FormData(form);
     
-    const categorySelect = document.getElementById('expenseCategory');
-    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-    const categoryName = selectedOption.getAttribute('data-name');
+    // Determine category type
+    const categoryType = document.querySelector('input[name="categoryType"]:checked').value;
+    let categoryId, categoryName;
+    
+    if (categoryType === 'existing') {
+        const categorySelect = document.getElementById('expenseCategory');
+        const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+        
+        if (!selectedOption.value || selectedOption.value === '') {
+            showNotification('Please select a category', 'error');
+            return;
+        }
+        
+        categoryId = selectedOption.value;
+        categoryName = selectedOption.getAttribute('data-name') || selectedOption.text;
+    } else {
+        // Using a custom category name
+        categoryId = 0;
+        categoryName = document.getElementById('customCategoryName').value.trim();
+        
+        if (!categoryName) {
+            showNotification('Please enter a category name', 'error');
+            return;
+        }
+    }
+    
+    const expenseId = currentExpenseId || formData.get('expenseId');
     
     const expenseData = {
-        categoryId: formData.get('categoryId') || 0,
+        categoryId: categoryId,
         categoryName: categoryName,
         amount: parseFloat(formData.get('amount')),
         expenseDate: formData.get('expenseDate'),
         description: formData.get('description') || ''
     };
     
-    if (currentExpenseId) {
-        // Update existing expense
-        expenseData.id = currentExpenseId;
+    console.log('Saving expense with data:', expenseData); 
+    
+    if (expenseId) {
+        expenseData.id = expenseId;
         updateExpenseAPI(expenseData);
-    } else {
-        // Create new expense
+    }else {
         createExpenseAPI(expenseData);
     }
 }
 
 function createExpenseAPI(data) {
-    // Get JWT token from sessionStorage or generate from session
     const token = sessionStorage.getItem('jwt_token');
     
     if (!token) {
@@ -142,7 +223,7 @@ function createExpenseViaForm(data) {
         const input = document.createElement('input');
         input.type = 'hidden';
         input.name = key;
-        input.value = data[key];
+        input.value = data[key] !== null && data[key] !== undefined ? data[key] : '';
         form.appendChild(input);
     }
     
@@ -156,7 +237,64 @@ function createExpenseViaForm(data) {
     form.submit();
 }
 
+function updateExpenseAPI(data) {
+    const token = sessionStorage.getItem('jwt_token');
+    
+    if (!token) {
+        // If no token, use session-based approach with direct form POST
+        updateExpenseViaForm(data);
+        return;
+    }
+    
+    fetch('/rest/expenses/' + data.id, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.status === 'success') {
+            showNotification('Expense updated successfully!', 'success');
+            closeExpenseModal();
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        } else {
+            showNotification('Error: ' + result.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Failed to update expense. Please try again.', 'error');
+    });
+}
+
 // Fallback to session-based form submission
+function updateExpenseViaForm(data) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/controllers/expenseHandler.cfm';
+    
+    for (const key in data) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = data[key] !== null && data[key] !== undefined ? data[key] : '';
+        form.appendChild(input);
+    }
+    
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = 'update';
+    form.appendChild(actionInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
 
 // ============= CATEGORY FUNCTIONS =============
 
