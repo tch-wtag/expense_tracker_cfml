@@ -145,6 +145,47 @@ component output="false" rest="true" restPath="expenses" displayName="ExpensesCo
 
         return response;
     }
+    /**
+     * DELETE an expense
+     * DELETE /api/expenses/{id}
+     */
+    function remove(required numeric id) 
+        access="remote" 
+        httpMethod="DELETE" 
+        restPath="{id}" 
+        returnFormat="json" 
+        output="false" {
+            
+        var response = {};
+
+        try {
+            var user = authorize();
+            var expenseRepo = new repositories.ExpenseRepository();
+            
+            // Check if expense exists and belongs to user
+            var existing = expenseRepo.findById(arguments.id, user.sub);
+            if (existing.recordCount == 0) {
+                response = {status="error", message="Expense not found"};
+                return response;
+            }
+            
+            var success = expenseRepo.delete(arguments.id, user.sub);
+            
+            if (success) {
+                response = {
+                    status = "success",
+                    message = "Expense deleted successfully"
+                };
+            } else {
+                response = {status="error", message="Failed to delete expense"};
+            }
+
+        } catch (any e) {
+            response = {status="error", message=e.message};
+        }
+
+        return response;
+    }
 
 }
 

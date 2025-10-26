@@ -296,6 +296,87 @@ function updateExpenseViaForm(data) {
     form.submit();
 }
 
+// Store the ID of the expense to be deleted
+let expenseToDelete = null;
+
+function deleteExpense(id) {
+    // Store the ID and show custom confirmation modal
+    expenseToDelete = id;
+    categoryToDelete = null; // Reset category
+    document.getElementById('deleteConfirmMessage').textContent = 'Are you sure you want to delete this expense?';
+    document.getElementById('deleteConfirmModal').style.display = 'block';
+}
+
+function closeDeleteConfirm() {
+    document.getElementById('deleteConfirmModal').style.display = 'none';
+    expenseToDelete = null;
+    categoryToDelete = null;
+}
+
+function confirmDeleteExpense() {
+    if (!expenseToDelete) {
+        closeDeleteConfirm();
+        return;
+    }
+    
+    const id = expenseToDelete;
+    closeDeleteConfirm();
+    
+    const token = sessionStorage.getItem('jwt_token');
+    
+    if (!token) {
+        // If no token, use session-based approach with direct form POST
+        deleteExpenseViaForm(id);
+        return;
+    }
+    
+    fetch('/rest/expenses/' + id, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.status === 'success') {
+            showNotification('Expense deleted successfully!', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        } else {
+            showNotification('Error: ' + result.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Failed to delete expense. Please try again.', 'error');
+    });
+}
+
+
+// Fallback to session-based form submission
+function deleteExpenseViaForm(id) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/controllers/expenseHandler.cfm';
+    
+    const idInput = document.createElement('input');
+    idInput.type = 'hidden';
+    idInput.name = 'id';
+    idInput.value = id;
+    form.appendChild(idInput);
+    
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = 'delete';
+    form.appendChild(actionInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
 // ============= CATEGORY FUNCTIONS =============
 
 function openCategoryModal() {
