@@ -56,6 +56,23 @@
                 }
                 break;
 
+            case "delete":
+                // Delete category
+                if (NOT structKeyExists(form, "id")) {
+                    response.message = "Category ID is required";
+                    break;
+                }
+                
+                success = categoryRepo.delete(form.id, session.userId);
+                
+                if (success) {
+                    response.success = true;
+                    response.message = "Category deleted successfully";
+                } else {
+                    response.message = "Failed to delete category";
+                }
+                break;
+
             default:
                 response.message = "Invalid action";
         }

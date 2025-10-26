@@ -114,6 +114,25 @@ component extends="BaseRepository" displayname="CategoryRepository" hint="Reposi
     }
 
     /**
+     * Delete category
+     */
+    public boolean function delete(required numeric id, required numeric userId) {
+        var sql = "DELETE FROM categories WHERE id = :id AND user_id = :userId";
+        
+        var params = {
+            id = {value=arguments.id, type="cf_sql_integer"},
+            userId = {value=arguments.userId, type="cf_sql_integer"}
+        };
+        
+        try {
+            executeUpdate(sql, params);
+            return true;
+        } catch (any e) {
+            return false;
+        }
+    }
+
+    /**
      * Get category usage count (number of expenses)
      */
     public numeric function getUsageCount(required numeric id, required numeric userId) {
