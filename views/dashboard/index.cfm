@@ -12,15 +12,17 @@
     startOfMonth = createDate(year(currentDate), month(currentDate), 1);
     endOfMonth = createDate(year(currentDate), month(currentDate), daysInMonth(currentDate));
     
-    // Get all expenses
+    // --- Fetch Data ---
     allExpenses = expenseRepo.findByUserId(session.userId);
-    
-    // Get all categories
+    monthExpenses = expenseRepo.findByDateRange(session.userId, startOfMonth, endOfMonth);
+    monthStats = expenseRepo.getStatistics(session.userId, startOfMonth, endOfMonth);
+    categorySummary = expenseRepo.getTotalByCategory(session.userId, startOfMonth, endOfMonth);
     categories = categoryRepo.findByUserId(session.userId);
-    
-    // Convert to arrays for easier handling
+
+    // --- Convert to arrays ---
     expensesArray = expenseRepo.queryToArray(allExpenses);
     categoriesArray = categoryRepo.queryToArray(categories);
+
 </cfscript>
 
 <!DOCTYPE html>
@@ -59,11 +61,6 @@
 
     <!-- Main Content -->
     <main class="dashboard-main">
-        <div class="dashboard-header">
-            <h1>Welcome back, <cfoutput>#session.username#</cfoutput>!</h1>
-            <p class="dashboard-subtitle">Here's your expense summary for <cfoutput>#dateFormat(currentDate, "mmmm yyyy")#</cfoutput></p>
-        </div>
-
         <!--- Display success/error messages --->
         <cfif structKeyExists(session, "successMessage")>
             <div class="alert alert-success" id="sessionAlert">
@@ -79,6 +76,14 @@
             <cfset structDelete(session, "errorMessage")>
         </cfif>
 
+        <!-- Overview Section -->
+        <section id="overview" class="dashboard-section active">
+            <!-- Welcome Header - Only shows in Overview -->
+            <div class="dashboard-welcome">
+                <h1>Welcome back, <cfoutput>#session.username#</cfoutput>! 👋</h1>
+                <p class="dashboard-subtitle">Here's your expense summary for <cfoutput>#dateFormat(currentDate, "mmmm yyyy")#</cfoutput></p>
+            </div>
+        </section>
         
         <!-- Expenses Section -->
         <cfinclude template="/views/dashboard/expenses.cfm">
