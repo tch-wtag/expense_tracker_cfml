@@ -151,6 +151,12 @@
                     </div>
                 </div>
             </div> 
+            
+            <!-- Daily Spending Chart -->
+            <div class="card">
+                <h3>Daily Spending (Last 7 Days)</h3>
+                <img src="/assets/images/daily-spending.png" alt="Daily Spending Chart">
+            </div>
         </cfif>
     </div>
 </section>

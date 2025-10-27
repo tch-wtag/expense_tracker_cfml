@@ -23,6 +23,49 @@
     expensesArray = expenseRepo.queryToArray(allExpenses);
     categoriesArray = categoryRepo.queryToArray(categories);
 
+    // --- LAST 7 DAYS CHART DATA ---
+    endDate = now();
+    startDate = dateAdd("d", -6, endDate);
+
+    try {
+        dailyTotalsRaw = expenseRepo.getDailyTotals(session.userId, startDate, endDate);
+    } catch(any e) {
+        dailyTotalsRaw = "";
+    }
+
+    /// --- Normalize Query ---
+    dailyTotals = queryNew("expense_date,daily_total", "date,numeric");
+    totalsMap = structNew();
+
+    if (isQuery(dailyTotalsRaw) && dailyTotalsRaw.recordCount gt 0) {
+        for (i=1; i <= dailyTotalsRaw.recordCount; i++) {
+            // Convert to date safely
+            d = dateFormat(dailyTotalsRaw.expense_date[i], "yyyy-mm-dd");
+            totalsMap[d] = dailyTotalsRaw.daily_total[i];
+        }
+    }
+
+    for (offset=0; offset <= 6; offset++) {
+        dObj = dateAdd("d", offset, startDate);
+        key = dateFormat(dObj, "yyyy-mm-dd");
+        value = structKeyExists(totalsMap, key) ? totalsMap[key] : 0;
+
+        queryAddRow(dailyTotals, 1);
+        querySetCell(dailyTotals, "expense_date", dObj, dailyTotals.recordCount);
+        querySetCell(dailyTotals, "daily_total", value, dailyTotals.recordCount);
+    }
+
+
+
+    // --- Generate Chart ---
+    chartService = new controllers.ChartService();
+    chartPath = expandPath("/assets/images/daily-spending.png");
+
+    chartService.generateDailySpendingChart(
+        dailyTotals = dailyTotals,
+        outputPath = chartPath
+    );
+
 </cfscript>
 
 <!DOCTYPE html>
