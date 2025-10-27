@@ -180,4 +180,67 @@ component output="false" rest="true" restPath="categories" displayName="Categori
 
         return response;
     }
+    /**
+     * GET category statistics
+     * GET /api/categories/{id}/stats
+     */
+    function getStats(required numeric id) access="remote" httpMethod="GET" restPath="{id}/stats" returnFormat="json" output="false" {
+        var response = {};
+
+        try {
+            var user = authorize();
+            var categoryRepo = new repositories.CategoryRepository();
+            var expenseRepo = new repositories.ExpenseRepository();
+            
+            // Check if category exists
+            var category = categoryRepo.findById(arguments.id, user.sub);
+            if (category.recordCount == 0) {
+                setHTTPStatus(404, "Not Found");
+                response = {
+                    status = "error",
+                    message = "Category not found"
+                };
+                return response;
+            }
+            
+            // Get usage count
+            var usageCount = categoryRepo.getUsageCount(arguments.id, user.sub);
+            
+            // Get total amount spent in this category
+            var sql = "
+                SELECT COALESCE(SUM(amount), 0) as total_amount
+                FROM expenses
+                WHERE category_id = :categoryId AND user_id = :userId
+            ";
+            var params = {
+                categoryId = {value=arguments.id, type="cf_sql_integer"},
+                userId = {value=user.sub, type="cf_sql_integer"}
+            };
+            var result = categoryRepo.executeQuery(sql, params);
+            
+            setHTTPStatus(200); 
+            response = {
+                status = "success",
+                statistics = {
+                    categoryId = arguments.id,
+                    categoryName = category.name[1],
+                    expenseCount = usageCount,
+                    totalAmount = result.total_amount[1]
+                }
+            };
+
+        } catch (any e) {
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
+        }
+
+        return response;
+    }
 }
