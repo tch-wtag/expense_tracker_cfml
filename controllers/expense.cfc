@@ -253,4 +253,131 @@ component output="false" rest="true" restPath="expenses" displayName="ExpensesCo
         return response;
     }
 
+<<<<<<< HEAD
+=======
+    /**
+     * GET expenses by date range
+     * GET /api/expenses/range?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+     */
+    function getByDateRange(required string startDate, required string endDate) access="remote" httpMethod="GET" restPath="range" returnFormat="json" output="false" {
+        var response = {};
+
+        try {
+            var user = authorize();
+            var expenseRepo = new repositories.ExpenseRepository();
+            
+            var start = parseDateTime(arguments.startDate);
+            var end = parseDateTime(arguments.endDate);
+            
+            var result = expenseRepo.findByDateRange(user.sub, start, end);
+            
+            setHTTPStatus(200); // OK
+            response = {
+                status = "success",
+                expenses = expenseRepo.queryToArray(result),
+                startDate = arguments.startDate,
+                endDate = arguments.endDate
+            };
+
+        } catch (any e) {
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else if (findNoCase("invalid date", e.message)) {
+                setHTTPStatus(400, "Bad Request");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
+        }
+
+        return response;
+    }
+
+    /**
+     * GET total spending by category
+     * GET /api/expenses/summary/category?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+     */
+    function getSummaryByCategory(string startDate, string endDate) access="remote" httpMethod="GET" restPath="summary/category" returnFormat="json" output="false" {
+        var response = {};
+
+        try {
+            var user = authorize();
+            var expenseRepo = new repositories.ExpenseRepository();
+            
+            var args = {userId = user.sub};
+            if (structKeyExists(arguments, "startDate") && structKeyExists(arguments, "endDate")) {
+                args.startDate = parseDateTime(arguments.startDate);
+                args.endDate = parseDateTime(arguments.endDate);
+            }
+            
+            var result = expenseRepo.getTotalByCategory(argumentCollection=args);
+            
+            setHTTPStatus(200); // OK
+            response = {
+                status = "success",
+                summary = expenseRepo.queryToArray(result)
+            };
+
+        } catch (any e) {
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else if (findNoCase("invalid date", e.message)) {
+                setHTTPStatus(400, "Bad Request");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
+        }
+
+        return response;
+    }
+
+    /**
+     * GET expense statistics
+     * GET /api/expenses/statistics?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+     */
+    function getStatistics(string startDate, string endDate) access="remote" httpMethod="GET" restPath="statistics" returnFormat="json" output="false" {
+        var response = {};
+
+        try {
+            var user = authorize();
+            var expenseRepo = new repositories.ExpenseRepository();
+            
+            var args = {userId = user.sub};
+            if (structKeyExists(arguments, "startDate") && structKeyExists(arguments, "endDate")) {
+                args.startDate = parseDateTime(arguments.startDate);
+                args.endDate = parseDateTime(arguments.endDate);
+            }
+            
+            var stats = expenseRepo.getStatistics(argumentCollection=args);
+            
+            setHTTPStatus(200); // OK
+            response = {
+                status = "success",
+                statistics = stats
+            };
+
+        } catch (any e) {
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else if (findNoCase("invalid date", e.message)) {
+                setHTTPStatus(400, "Bad Request");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
+        }
+
+        return response;
+    }
+>>>>>>> 3e00ebb (Feat: Introduced REST endpoints for reporting data.)
 }
