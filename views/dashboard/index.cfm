@@ -126,6 +126,43 @@
                 <h1>Welcome back, <cfoutput>#session.username#</cfoutput>! 👋</h1>
                 <p class="dashboard-subtitle">Here's your expense summary for <cfoutput>#dateFormat(currentDate, "mmmm yyyy")#</cfoutput></p>
             </div>
+
+            <div class="modern-stats-grid">
+                <div class="stat-card">
+                    <div class="stat-left">
+                        <h3 class="stat-title">Total Spending</h3>
+                        <p class="stat-subtitle">This Month</p>
+                    </div>
+                    <cfoutput><p class="stat-value">৳#numberFormat(monthStats.totalAmount, "9,999.99")#</p></cfoutput>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-left">
+                        <h3 class="stat-title">Total Expenses</h3>
+                        <p class="stat-subtitle">Transactions</p>
+                    </div>
+                    <cfoutput><p class="stat-value">#monthStats.totalCount#</p></cfoutput>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-left">
+                        <h3 class="stat-title">Average Expense</h3>
+                        <p class="stat-subtitle">Per Transaction</p>
+                    </div>
+                    <cfoutput><p class="stat-value">৳#numberFormat(monthStats.avgAmount, "9,999.99")#</p></cfoutput>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-left">
+                        <h3 class="stat-title">Active Categories</h3>
+                        <p class="stat-subtitle">Categories Created</p>
+                    </div>
+                    <cfoutput><p class="stat-value">#categories.recordCount#</p></cfoutput>
+                </div>
+            </div>
+
+
+
         </section>
         
         <!-- Expenses Section -->
