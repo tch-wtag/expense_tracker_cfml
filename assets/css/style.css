@@ -257,6 +257,37 @@ footer {
   border: 1px solid #c3e6cb;
 }
 
+.auth-container button.btn,
+.auth-container a.btn {
+    display: flex;             
+    align-items: center;
+    justify-content: center;
+    width: 100%;              
+    background-color: #FF8C55;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+
+.auth-container button.btn:hover,
+.auth-container a.btn:hover {
+    background-color: #FF9B6A;
+    box-shadow: 0 2px 10px rgba(255, 140, 85, 0.3);
+}
+
+/* Logo inside button */
+.auth-container .btn img {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
 /* ======= DASHBOARD LAYOUT ======= */
 .dashboard-container {
   display: flex;

@@ -1,0 +1,17 @@
+# Ignore environment and config files
+.env.cfm
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore logs and temp files
+logs/
+*.log
+temp/
+*.tmp
+
+# Ignore build and cache files
+node_modules/
+.vscode/
+.idea/
