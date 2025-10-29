@@ -1,20 +1,31 @@
 component output="false" rest="true" restPath="expenses" displayName="ExpensesController" extends="BaseRestController" {
-
+    /**
+     * GET all expenses for authenticated user
+     * GET /api/expenses
+     */
     function getAll() access="remote" httpMethod="GET" returnFormat="json" output="false" {
         var response = {};
-
         try {
             var user = authorize();
             var expenseRepo = new repositories.ExpenseRepository();
             var result = expenseRepo.findByUserId(user.sub);
             
+            setHTTPStatus(200); // OK
             response = {
                 status = "success",
                 expenses = expenseRepo.queryToArray(result)
             };
 
         } catch (any e) {
-            response = {status="error", message=e.message};
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
         }
 
         return response;
@@ -33,17 +44,30 @@ component output="false" rest="true" restPath="expenses" displayName="ExpensesCo
             var result = expenseRepo.findById(arguments.id, user.sub);
             
             if (result.recordCount > 0) {
+                setHTTPStatus(200); // OK
                 var expenses = expenseRepo.queryToArray(result);
                 response = {
                     status = "success",
                     expense = expenses[1]
                 };
             } else {
-                response = {status="error", message="Expense not found"};
+                setHTTPStatus(404, "Not Found");
+                response = {
+                    status = "error",
+                    message = "Expense not found"
+                };
             }
 
         } catch (any e) {
-            response = {status="error", message=e.message};
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
         }
 
         return response;
@@ -79,17 +103,30 @@ component output="false" rest="true" restPath="expenses" displayName="ExpensesCo
             );
             
             if (result.success) {
+                setHTTPStatus(201, "Created");
                 response = {
                     status = "success",
                     message = "Expense added successfully",
                     expenseId = result.insertId
                 };
             } else {
-                response = {status="error", message=result.message};
+                setHTTPStatus(400, "Bad Request");
+                response = {
+                    status = "error",
+                    message = result.message
+                };
             }
 
         } catch (any e) {
-            response = {status="error", message=e.message};
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
         }
 
         return response;
@@ -113,9 +150,14 @@ component output="false" rest="true" restPath="expenses" displayName="ExpensesCo
             var user = authorize();
             var expenseRepo = new repositories.ExpenseRepository();
             
+            // Check if expense exists and belongs to user
             var existing = expenseRepo.findById(arguments.id, user.sub);
             if (existing.recordCount == 0) {
-                response = {status="error", message="Expense not found"};
+                setHTTPStatus(404, "Not Found");
+                response = {
+                    status = "error",
+                    message = "Expense not found"
+                };
                 return response;
             }
             
@@ -131,16 +173,29 @@ component output="false" rest="true" restPath="expenses" displayName="ExpensesCo
             var success = expenseRepo.update(argumentCollection=updateArgs);
             
             if (success) {
+                setHTTPStatus(200); // OK
                 response = {
                     status = "success",
                     message = "Expense updated successfully"
                 };
             } else {
-                response = {status="error", message="Failed to update expense"};
+                setHTTPStatus(400, "Bad Request");
+                response = {
+                    status = "error",
+                    message = "Failed to update expense"
+                };
             }
 
         } catch (any e) {
-            response = {status="error", message=e.message};
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
         }
 
         return response;
@@ -149,13 +204,7 @@ component output="false" rest="true" restPath="expenses" displayName="ExpensesCo
      * DELETE an expense
      * DELETE /api/expenses/{id}
      */
-    function remove(required numeric id) 
-        access="remote" 
-        httpMethod="DELETE" 
-        restPath="{id}" 
-        returnFormat="json" 
-        output="false" {
-            
+    function remove(required numeric id) access="remote" httpMethod="DELETE" restPath="{id}" returnFormat="json" output="false" {
         var response = {};
 
         try {
@@ -165,27 +214,43 @@ component output="false" rest="true" restPath="expenses" displayName="ExpensesCo
             // Check if expense exists and belongs to user
             var existing = expenseRepo.findById(arguments.id, user.sub);
             if (existing.recordCount == 0) {
-                response = {status="error", message="Expense not found"};
+                setHTTPStatus(404, "Not Found");
+                response = {
+                    status = "error",
+                    message = "Expense not found"
+                };
                 return response;
             }
             
             var success = expenseRepo.delete(arguments.id, user.sub);
             
             if (success) {
+                setHTTPStatus(200); // OK
                 response = {
                     status = "success",
                     message = "Expense deleted successfully"
                 };
             } else {
-                response = {status="error", message="Failed to delete expense"};
+                setHTTPStatus(500, "Internal Server Error");
+                response = {
+                    status = "error",
+                    message = "Failed to delete expense"
+                };
             }
 
         } catch (any e) {
-            response = {status="error", message=e.message};
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
         }
 
         return response;
     }
 
 }
-
