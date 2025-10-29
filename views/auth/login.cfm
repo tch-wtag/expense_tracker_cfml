@@ -9,6 +9,15 @@
             <button type="submit" class="btn">Login</button>
         </form>
         <p>Don't have an account? <a href="/views/auth/signup.cfm">Sign up here</a></p>
+
+        <!-- Google Login Button -->
+        <div class="google-auth">
+            <p>or</p>
+            <a href="/controllers/googleLogin.cfm" class="btn">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo">
+                Login with Google
+            </a>
+        </div>
     </div>
 </section>
 

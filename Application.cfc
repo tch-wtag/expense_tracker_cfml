@@ -9,6 +9,13 @@ component {
     };
 
     function onApplicationStart() {
+        // Include environment config
+        include expandPath(".env.cfm");
+
+        // Map Google keys from environment config
+        application.GOOGLECLIENTID = application.env.GOOGLECLIENTID;
+        application.GOOGLECLIENTSECRET = application.env.GOOGLECLIENTSECRET;
+        application.GOOGLEREDIRECTURI = application.env.GOOGLEREDIRECTURI;
         try {
             restInitApplication(
                 dirPath = expandPath("/var/www/controllers"),
