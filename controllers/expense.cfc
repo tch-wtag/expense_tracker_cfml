@@ -253,8 +253,6 @@ component output="false" rest="true" restPath="expenses" displayName="ExpensesCo
         return response;
     }
 
-<<<<<<< HEAD
-=======
     /**
      * GET expenses by date range
      * GET /api/expenses/range?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
@@ -379,5 +377,4 @@ component output="false" rest="true" restPath="expenses" displayName="ExpensesCo
 
         return response;
     }
->>>>>>> 3e00ebb (Feat: Introduced REST endpoints for reporting data.)
 }
