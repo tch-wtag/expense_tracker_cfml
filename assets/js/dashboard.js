@@ -58,8 +58,31 @@ function openExpenseModal() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('expenseDate').value = today;
     
+    document.querySelector('input[name="categoryType"][value="existing"]').checked = true;
+    toggleCategoryInput();
+    
     document.getElementById('expenseModal').style.display = 'block';
     currentExpenseId = null;
+}
+
+function toggleCategoryInput() {
+    const categoryType = document.querySelector('input[name="categoryType"]:checked').value;
+    const selectElement = document.getElementById('expenseCategory');
+    const textInput = document.getElementById('customCategoryName');
+    
+    if (categoryType === 'existing') {
+        selectElement.style.display = 'block';
+        selectElement.required = true;
+        textInput.style.display = 'none';
+        textInput.required = false;
+        textInput.value = '';
+    } else {
+        selectElement.style.display = 'none';
+        selectElement.required = false;
+        selectElement.value = '';
+        textInput.style.display = 'block';
+        textInput.required = true;
+    }
 }
 
 function closeExpenseModal() {
@@ -67,6 +90,41 @@ function closeExpenseModal() {
     currentExpenseId = null;
 }
 
+function editExpense(expense) {
+    document.getElementById('expenseModalTitle').textContent = 'Edit Expense';
+    document.getElementById('expenseId').value = expense.id;
+    document.getElementById('expenseAmount').value = expense.amount;
+    document.getElementById('expenseDate').value = expense.expenseDate;
+    document.getElementById('expenseDescription').value = expense.description || '';
+    
+    if (expense.categoryId && expense.categoryId !== '' && expense.categoryId !== 'null') {
+        document.querySelector('input[name="categoryType"][value="existing"]').checked = true;
+        document.getElementById('expenseCategory').value = expense.categoryId;
+    } else {
+        document.querySelector('input[name="categoryType"][value="custom"]').checked = true;
+        document.getElementById('customCategoryName').value = expense.categoryName || '';
+    }
+    toggleCategoryInput();
+    
+    document.getElementById('expenseModal').style.display = 'block';
+    currentExpenseId = expense.id;
+}
+
+
+function editExpenseFromData(button) {
+    const categoryId = button.getAttribute('data-category-id');
+    const expense = {
+        id: button.getAttribute('data-id'),
+        categoryId: (categoryId && categoryId !== 'null' && categoryId !== '') ? categoryId : '',
+        categoryName: button.getAttribute('data-category-name'),
+        amount: button.getAttribute('data-amount'),
+        expenseDate: button.getAttribute('data-expense-date'),
+        description: button.getAttribute('data-description') || ''
+    };
+    
+    console.log('Editing expense:', expense); 
+    editExpense(expense);
+}
 
 function saveExpense(event) {
     event.preventDefault();
@@ -74,30 +132,53 @@ function saveExpense(event) {
     const form = event.target;
     const formData = new FormData(form);
     
-    const categorySelect = document.getElementById('expenseCategory');
-    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-    const categoryName = selectedOption.getAttribute('data-name');
+    // Determine category type
+    const categoryType = document.querySelector('input[name="categoryType"]:checked').value;
+    let categoryId, categoryName;
+    
+    if (categoryType === 'existing') {
+        const categorySelect = document.getElementById('expenseCategory');
+        const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+        
+        if (!selectedOption.value || selectedOption.value === '') {
+            showNotification('Please select a category', 'error');
+            return;
+        }
+        
+        categoryId = selectedOption.value;
+        categoryName = selectedOption.getAttribute('data-name') || selectedOption.text;
+    } else {
+        // Using a custom category name
+        categoryId = 0;
+        categoryName = document.getElementById('customCategoryName').value.trim();
+        
+        if (!categoryName) {
+            showNotification('Please enter a category name', 'error');
+            return;
+        }
+    }
+    
+    const expenseId = currentExpenseId || formData.get('expenseId');
     
     const expenseData = {
-        categoryId: formData.get('categoryId') || 0,
+        categoryId: categoryId,
         categoryName: categoryName,
         amount: parseFloat(formData.get('amount')),
         expenseDate: formData.get('expenseDate'),
         description: formData.get('description') || ''
     };
     
-    if (currentExpenseId) {
-        // Update existing expense
-        expenseData.id = currentExpenseId;
+    console.log('Saving expense with data:', expenseData); 
+    
+    if (expenseId) {
+        expenseData.id = expenseId;
         updateExpenseAPI(expenseData);
-    } else {
-        // Create new expense
+    }else {
         createExpenseAPI(expenseData);
     }
 }
 
 function createExpenseAPI(data) {
-    // Get JWT token from sessionStorage or generate from session
     const token = sessionStorage.getItem('jwt_token');
     
     if (!token) {
@@ -142,7 +223,7 @@ function createExpenseViaForm(data) {
         const input = document.createElement('input');
         input.type = 'hidden';
         input.name = key;
-        input.value = data[key];
+        input.value = data[key] !== null && data[key] !== undefined ? data[key] : '';
         form.appendChild(input);
     }
     
@@ -156,7 +237,145 @@ function createExpenseViaForm(data) {
     form.submit();
 }
 
+function updateExpenseAPI(data) {
+    const token = sessionStorage.getItem('jwt_token');
+    
+    if (!token) {
+        // If no token, use session-based approach with direct form POST
+        updateExpenseViaForm(data);
+        return;
+    }
+    
+    fetch('/rest/expenses/' + data.id, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.status === 'success') {
+            showNotification('Expense updated successfully!', 'success');
+            closeExpenseModal();
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        } else {
+            showNotification('Error: ' + result.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Failed to update expense. Please try again.', 'error');
+    });
+}
+
 // Fallback to session-based form submission
+function updateExpenseViaForm(data) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/controllers/expenseHandler.cfm';
+    
+    for (const key in data) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = data[key] !== null && data[key] !== undefined ? data[key] : '';
+        form.appendChild(input);
+    }
+    
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = 'update';
+    form.appendChild(actionInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// Store the ID of the expense to be deleted
+let expenseToDelete = null;
+
+function deleteExpense(id) {
+    // Store the ID and show custom confirmation modal
+    expenseToDelete = id;
+    categoryToDelete = null; // Reset category
+    document.getElementById('deleteConfirmMessage').textContent = 'Are you sure you want to delete this expense?';
+    document.getElementById('deleteConfirmModal').style.display = 'block';
+}
+
+function closeDeleteConfirm() {
+    document.getElementById('deleteConfirmModal').style.display = 'none';
+    expenseToDelete = null;
+    categoryToDelete = null;
+}
+
+function confirmDeleteExpense() {
+    if (!expenseToDelete) {
+        closeDeleteConfirm();
+        return;
+    }
+    
+    const id = expenseToDelete;
+    closeDeleteConfirm();
+    
+    const token = sessionStorage.getItem('jwt_token');
+    
+    if (!token) {
+        // If no token, use session-based approach with direct form POST
+        deleteExpenseViaForm(id);
+        return;
+    }
+    
+    fetch('/rest/expenses/' + id, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.status === 'success') {
+            showNotification('Expense deleted successfully!', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        } else {
+            showNotification('Error: ' + result.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Failed to delete expense. Please try again.', 'error');
+    });
+}
+
+
+// Fallback to session-based form submission
+function deleteExpenseViaForm(id) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/controllers/expenseHandler.cfm';
+    
+    const idInput = document.createElement('input');
+    idInput.type = 'hidden';
+    idInput.name = 'id';
+    idInput.value = id;
+    form.appendChild(idInput);
+    
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = 'delete';
+    form.appendChild(actionInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
 
 // ============= CATEGORY FUNCTIONS =============
 
@@ -289,6 +508,118 @@ function createCategoryViaForm(data) {
     
     document.body.appendChild(form);
     form.submit();
+}
+
+// Store the category to be deleted
+let categoryToDelete = null;
+
+function deleteCategory(id, name) {
+    // Store the category info and show custom confirmation modal
+    categoryToDelete = { id: id, name: name };
+    expenseToDelete = null; // Reset expense
+    
+    const message = `Are you sure you want to delete the category "${name}"? This will remove the category reference from all associated expenses.`;
+    document.getElementById('deleteConfirmMessage').textContent = message;
+    document.getElementById('deleteConfirmModal').style.display = 'block';
+}
+
+function closeDeleteConfirm() {
+    document.getElementById('deleteConfirmModal').style.display = 'none';
+    expenseToDelete = null;
+    categoryToDelete = null;
+}
+
+function confirmDelete() {
+    // Check if deleting expense or category
+    if (expenseToDelete) {
+        confirmDeleteExpense();
+    } else if (categoryToDelete) {
+        confirmDeleteCategory();
+    } else {
+        closeDeleteConfirm();
+    }
+}
+
+function confirmDeleteCategory() {
+    if (!categoryToDelete) {
+        closeDeleteConfirm();
+        return;
+    }
+    
+    const id = categoryToDelete.id;
+    closeDeleteConfirm();
+    
+    const token = sessionStorage.getItem('jwt_token');
+    
+    if (!token) {
+        // If no token, use session-based approach with direct form POST
+        deleteCategoryViaForm(id);
+        return;
+    }
+    
+    fetch('/rest/categories/' + id, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.status === 'success') {
+            showNotification('Category deleted successfully!', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        } else {
+            showNotification('Error: ' + result.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Failed to delete category. Please try again.', 'error');
+    });
+}
+
+// Fallback to session-based form submission
+function deleteCategoryViaForm(id) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/controllers/categoryHandler.cfm';
+    
+    const idInput = document.createElement('input');
+    idInput.type = 'hidden';
+    idInput.name = 'id';
+    idInput.value = id;
+    form.appendChild(idInput);
+    
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = 'delete';
+    form.appendChild(actionInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// ============= REPORT FUNCTIONS =============
+
+function generateCustomReport() {
+    const startDate = document.getElementById('reportStartDate').value;
+    const endDate = document.getElementById('reportEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates', 'error');
+        return;
+    }
+    
+    if (startDate > endDate) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    window.location.href = '/views/dashboard/index.cfm?reportStart=' + startDate + '&reportEnd=' + endDate + '#reports';
 }
 
 

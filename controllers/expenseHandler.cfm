@@ -41,6 +41,56 @@
                     response.message = result.message;
                 }
                 break;
+
+            case "update":
+                if (NOT structKeyExists(form, "id")) {
+                    response.message = "Expense ID is required";
+                    break;
+                }
+                
+                updateArgs = {
+                    id = form.id,
+                    userId = session.userId
+                };
+                
+                if (structKeyExists(form, "categoryId") AND len(trim(form.categoryId)) GT 0) {
+                    categoryId = val(form.categoryId);
+                    updateArgs.categoryId = categoryId;
+                } else if (structKeyExists(form, "categoryId")) {
+                    updateArgs.categoryId = 0;
+                }
+                
+                if (structKeyExists(form, "categoryName")) updateArgs.categoryName = form.categoryName;
+                if (structKeyExists(form, "amount")) updateArgs.amount = form.amount;
+                if (structKeyExists(form, "expenseDate")) updateArgs.expenseDate = parseDateTime(form.expenseDate);
+                if (structKeyExists(form, "description")) updateArgs.description = form.description;
+                
+                success = expenseRepo.update(argumentCollection=updateArgs);
+                
+                if (success) {
+                    response.success = true;
+                    response.message = "Expense updated successfully";
+                } else {
+                    response.message = "Failed to update expense";
+                }
+                break;
+            case "delete":
+                // Delete expense
+                if (NOT structKeyExists(form, "id")) {
+                    response.message = "Expense ID is required";
+                    break;
+                }
+                
+                success = expenseRepo.delete(form.id, session.userId);
+                
+                if (success) {
+                    response.success = true;
+                    response.message = "Expense deleted successfully";
+                } else {
+                    response.message = "Failed to delete expense";
+                }
+                break;
+                
             default:
                 response.message = "Invalid action";
         }

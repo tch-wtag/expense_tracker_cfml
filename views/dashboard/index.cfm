@@ -12,15 +12,60 @@
     startOfMonth = createDate(year(currentDate), month(currentDate), 1);
     endOfMonth = createDate(year(currentDate), month(currentDate), daysInMonth(currentDate));
     
-    // Get all expenses
+    // --- Fetch Data ---
     allExpenses = expenseRepo.findByUserId(session.userId);
-    
-    // Get all categories
+    monthExpenses = expenseRepo.findByDateRange(session.userId, startOfMonth, endOfMonth);
+    monthStats = expenseRepo.getStatistics(session.userId, startOfMonth, endOfMonth);
+    categorySummary = expenseRepo.getTotalByCategory(session.userId, startOfMonth, endOfMonth);
     categories = categoryRepo.findByUserId(session.userId);
-    
-    // Convert to arrays for easier handling
+
+    // --- Convert to arrays ---
     expensesArray = expenseRepo.queryToArray(allExpenses);
     categoriesArray = categoryRepo.queryToArray(categories);
+
+    // --- LAST 7 DAYS CHART DATA ---
+    endDate = now();
+    startDate = dateAdd("d", -6, endDate);
+
+    try {
+        dailyTotalsRaw = expenseRepo.getDailyTotals(session.userId, startDate, endDate);
+    } catch(any e) {
+        dailyTotalsRaw = "";
+    }
+
+    /// --- Normalize Query ---
+    dailyTotals = queryNew("expense_date,daily_total", "date,numeric");
+    totalsMap = structNew();
+
+    if (isQuery(dailyTotalsRaw) && dailyTotalsRaw.recordCount gt 0) {
+        for (i=1; i <= dailyTotalsRaw.recordCount; i++) {
+            // Convert to date safely
+            d = dateFormat(dailyTotalsRaw.expense_date[i], "yyyy-mm-dd");
+            totalsMap[d] = dailyTotalsRaw.daily_total[i];
+        }
+    }
+
+    for (offset=0; offset <= 6; offset++) {
+        dObj = dateAdd("d", offset, startDate);
+        key = dateFormat(dObj, "yyyy-mm-dd");
+        value = structKeyExists(totalsMap, key) ? totalsMap[key] : 0;
+
+        queryAddRow(dailyTotals, 1);
+        querySetCell(dailyTotals, "expense_date", dObj, dailyTotals.recordCount);
+        querySetCell(dailyTotals, "daily_total", value, dailyTotals.recordCount);
+    }
+
+
+
+    // --- Generate Chart ---
+    chartService = new controllers.ChartService();
+    chartPath = expandPath("/assets/images/daily-spending.png");
+
+    chartService.generateDailySpendingChart(
+        dailyTotals = dailyTotals,
+        outputPath = chartPath
+    );
+
 </cfscript>
 
 <!DOCTYPE html>
@@ -59,11 +104,6 @@
 
     <!-- Main Content -->
     <main class="dashboard-main">
-        <div class="dashboard-header">
-            <h1>Welcome back, <cfoutput>#session.username#</cfoutput>!</h1>
-            <p class="dashboard-subtitle">Here's your expense summary for <cfoutput>#dateFormat(currentDate, "mmmm yyyy")#</cfoutput></p>
-        </div>
-
         <!--- Display success/error messages --->
         <cfif structKeyExists(session, "successMessage")>
             <div class="alert alert-success" id="sessionAlert">
@@ -79,6 +119,14 @@
             <cfset structDelete(session, "errorMessage")>
         </cfif>
 
+        <!-- Overview Section -->
+        <section id="overview" class="dashboard-section active">
+            <!-- Welcome Header - Only shows in Overview -->
+            <div class="dashboard-welcome">
+                <h1>Welcome back, <cfoutput>#session.username#</cfoutput>! 👋</h1>
+                <p class="dashboard-subtitle">Here's your expense summary for <cfoutput>#dateFormat(currentDate, "mmmm yyyy")#</cfoutput></p>
+            </div>
+        </section>
         
         <!-- Expenses Section -->
         <cfinclude template="/views/dashboard/expenses.cfm">
