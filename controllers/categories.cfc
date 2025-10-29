@@ -5,39 +5,72 @@ component output="false" rest="true" restPath="categories" displayName="Categori
      */
     function getAll() access="remote" httpMethod="GET" returnFormat="json" output="false" {
         var response = {};
+
         try {
             var user = authorize();
-            var repo = new repositories.CategoryRepository();
-            var result = repo.findByUserId(user.sub);
+            var categoryRepo = new repositories.CategoryRepository();
+            var result = categoryRepo.findByUserId(user.sub);
+            
+            setHTTPStatus(200); // OK
             response = {
                 status = "success",
-                categories = repo.queryToArray(result)
+                categories = categoryRepo.queryToArray(result)
             };
 
         } catch (any e) {
-            response = {status="error", message=e.message};
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
         }
+
         return response;
     }
 
+    /**
+     * GET a single category by ID
+     * GET /api/categories/{id}
+     */
     function getById(required numeric id) access="remote" httpMethod="GET" restPath="{id}" returnFormat="json" output="false" {
         var response = {};
+
         try {
             var user = authorize();
-            var repo = new repositories.CategoryRepository();
-            var result = repo.findById(arguments.id, user.sub);
+            var categoryRepo = new repositories.CategoryRepository();
+            var result = categoryRepo.findById(arguments.id, user.sub);
+            
             if (result.recordCount > 0) {
-                var categories = repo.queryToArray(result);
+                setHTTPStatus(200); // OK
+                var categories = categoryRepo.queryToArray(result);
                 response = {
                     status = "success",
                     category = categories[1]
                 };
             } else {
-                response = {status="error", message="Category not found"};
+                setHTTPStatus(404, "Not Found");
+                response = {
+                    status = "error",
+                    message = "Category not found"
+                };
             }
+
         } catch (any e) {
-            response = {status="error", message=e.message};
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
         }
+
         return response;
     }
 
@@ -55,31 +88,54 @@ component output="false" rest="true" restPath="categories" displayName="Categori
         try {
             var user = authorize();
             var categoryRepo = new repositories.CategoryRepository();
-
+            
+            // Check if category name already exists
             if (categoryRepo.nameExistsForUser(arguments.name, user.sub)) {
-                response = {status="error", message="Category name already exists"};
+                setHTTPStatus(409, "Conflict");
+                response = {
+                    status = "error",
+                    message = "Category name already exists"
+                };
                 return response;
             }
+            
             var result = categoryRepo.create(
                 userId = user.sub,
                 name = arguments.name,
                 description = arguments.description,
                 color = arguments.color
             );
+            
             if (result.success) {
+                setHTTPStatus(201, "Created");
                 response = {
                     status = "success",
                     message = "Category created successfully",
                     categoryId = result.insertId
                 };
             } else {
-                response = {status="error", message=result.message};
+                setHTTPStatus(400, "Bad Request");
+                response = {
+                    status = "error",
+                    message = result.message
+                };
             }
+
         } catch (any e) {
-            response = {status="error", message=e.message};
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
         }
+
         return response;
     }
+
     /**
      * UPDATE an existing category
      * PUT /api/categories/{id}
@@ -99,14 +155,22 @@ component output="false" rest="true" restPath="categories" displayName="Categori
             // Check if category exists and belongs to user
             var existing = categoryRepo.findById(arguments.id, user.sub);
             if (existing.recordCount == 0) {
-                response = {status="error", message="Category not found"};
+                setHTTPStatus(404, "Not Found");
+                response = {
+                    status = "error",
+                    message = "Category not found"
+                };
                 return response;
             }
             
             // Check if new name conflicts with existing category
             if (structKeyExists(arguments, "name") && len(trim(arguments.name))) {
                 if (categoryRepo.nameExistsForUser(arguments.name, user.sub, arguments.id)) {
-                    response = {status="error", message="Category name already exists"};
+                    setHTTPStatus(409, "Conflict");
+                    response = {
+                        status = "error",
+                        message = "Category name already exists"
+                    };
                     return response;
                 }
             }
@@ -119,16 +183,29 @@ component output="false" rest="true" restPath="categories" displayName="Categori
             var success = categoryRepo.update(argumentCollection=updateArgs);
             
             if (success) {
+                setHTTPStatus(200); // OK
                 response = {
                     status = "success",
                     message = "Category updated successfully"
                 };
             } else {
-                response = {status="error", message="Failed to update category"};
+                setHTTPStatus(400, "Bad Request");
+                response = {
+                    status = "error",
+                    message = "Failed to update category"
+                };
             }
 
         } catch (any e) {
-            response = {status="error", message=e.message};
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
         }
 
         return response;
@@ -148,7 +225,11 @@ component output="false" rest="true" restPath="categories" displayName="Categori
             // Check if category exists and belongs to user
             var existing = categoryRepo.findById(arguments.id, user.sub);
             if (existing.recordCount == 0) {
-                response = {status="error", message="Category not found"};
+                setHTTPStatus(404, "Not Found");
+                response = {
+                    status = "error",
+                    message = "Category not found"
+                };
                 return response;
             }
             
@@ -166,16 +247,29 @@ component output="false" rest="true" restPath="categories" displayName="Categori
             var success = categoryRepo.delete(arguments.id, user.sub);
             
             if (success) {
+                setHTTPStatus(200); // OK
                 response = {
                     status = "success",
                     message = "Category deleted successfully"
                 };
             } else {
-                response = {status="error", message="Failed to delete category"};
+                setHTTPStatus(500, "Internal Server Error");
+                response = {
+                    status = "error",
+                    message = "Failed to delete category"
+                };
             }
 
         } catch (any e) {
-            response = {status="error", message=e.message};
+            if (e.type == "Unauthorized") {
+                setHTTPStatus(401, "Unauthorized");
+            } else {
+                setHTTPStatus(500, "Internal Server Error");
+            }
+            response = {
+                status = "error",
+                message = e.message
+            };
         }
 
         return response;
