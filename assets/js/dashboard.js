@@ -603,6 +603,24 @@ function deleteCategoryViaForm(id) {
     form.submit();
 }
 
+// ============= REPORT FUNCTIONS =============
+
+function generateCustomReport() {
+    const startDate = document.getElementById('reportStartDate').value;
+    const endDate = document.getElementById('reportEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates', 'error');
+        return;
+    }
+    
+    if (startDate > endDate) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    window.location.href = '/views/dashboard/index.cfm?reportStart=' + startDate + '&reportEnd=' + endDate + '#reports';
+}
 
 
 // ============= UTILITY FUNCTIONS =============
