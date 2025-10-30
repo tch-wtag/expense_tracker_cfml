@@ -42,6 +42,12 @@ Built with **Lucee CFML**, **MariaDB**, and a clean **HTML/CSS** frontend.
 
 2. **Configure the database** inside the Lucee admin panel:
 
+   * Open the Lucee Admin at
+     👉 [http://localhost:8888/lucee/admin/index.cfm](http://localhost:8888/lucee/admin/index.cfm)
+   * Default password: **`hello`**
+
+   Then create a new datasource with the following details:
+
 | Field           | Value                             |
 | --------------- | --------------------------------- |
 | Datasource Name | `myDSN`                           |
