@@ -6,6 +6,23 @@
         </button>
     </div>
 
+    <!-- Expense Filters -->
+    <div class="card">
+        <div class="filter-group">
+            <input type="text" id="searchExpense" placeholder="Search expenses..." class="form-input">
+            <select id="filterCategory" class="form-select">
+                <option value="">All Categories</option>
+                <cfloop query="categories">
+                    <cfoutput><option value="#categories.name#">#categories.name#</option></cfoutput>
+                </cfloop>
+            </select>
+            <input type="date" id="filterStartDate" class="form-input" placeholder="Start Date">
+            <input type="date" id="filterEndDate" class="form-input" placeholder="End Date">
+            <button class="btn btn-secondary" onclick="applyFilters()">Filter</button>
+            <button class="btn btn-outline" onclick="clearFilters()">Clear</button>
+        </div>
+    </div>
+
     <!-- Expenses Table -->
     <div class="card">
         <div class="table-responsive">
