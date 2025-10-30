@@ -41,7 +41,7 @@ Built with **Lucee CFML**, **MariaDB**, and a clean **HTML/CSS** frontend.
    ```
 
 2. **Create the environment config file**
-   Before running the app, create `/config/.env.cfm` (as shown below in the **Google OAuth 2.0 Setup** section).
+   Before running the app, create `env.cfm` (as shown below in the **Google OAuth 2.0 Setup** section).
 
    > ⚠️ Without this file, Lucee will throw an error while loading environment variables.
 
