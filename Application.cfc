@@ -16,6 +16,7 @@ component {
         application.GOOGLECLIENTID = application.env.GOOGLECLIENTID;
         application.GOOGLECLIENTSECRET = application.env.GOOGLECLIENTSECRET;
         application.GOOGLEREDIRECTURI = application.env.GOOGLEREDIRECTURI;
+        application.SECRET_KEY          = application.env.SECRET_KEY;
         try {
             restInitApplication(
                 dirPath = expandPath("/var/www/controllers"),

@@ -2,12 +2,13 @@
     <!--- Validate Google OAuth Configuration --->
     <cfif NOT structKeyExists(application, "GOOGLECLIENTID") OR
           NOT structKeyExists(application, "GOOGLECLIENTSECRET") OR
-          NOT structKeyExists(application, "GOOGLEREDIRECTURI")>
-        <cfoutput>Google OAuth keys are not configured properly.</cfoutput>
+          NOT structKeyExists(application, "GOOGLEREDIRECTURI") OR
+          NOT structKeyExists(application, "SECRET_KEY")>
+        <cfoutput>Google OAuth keys or secret key are not configured properly.</cfoutput>
         <cfabort>
     </cfif>
 
-    <!--- Handle Authorization Code and State  --->
+    <!--- Handle Authorization Code and State --->
     <cfparam name="url.code" default="">
     <cfparam name="url.state" default="">
 
@@ -35,12 +36,13 @@
         <cfabort>
     </cfif>
 
-    <cfset accessToken  = tokenData.access_token>
-    <cfset refreshToken = structKeyExists(tokenData, "refresh_token") ? tokenData.refresh_token : "">
+    <!--- Encrypt tokens using AES --->
+    <cfset accessTokenEncrypted  = encrypt(tokenData.access_token, application.env.SECRET_KEY, "AES/CBC/PKCS5Padding", "base64")>
+    <cfset refreshTokenEncrypted = structKeyExists(tokenData, "refresh_token") ? encrypt(tokenData.refresh_token, application.env.SECRET_KEY, "AES/CBC/PKCS5Padding", "base64") : "">
 
     <!--- Fetch User Info from Google API --->
     <cfhttp url="https://www.googleapis.com/oauth2/v2/userinfo" method="get" result="userResponse">
-        <cfhttpparam type="header" name="Authorization" value="Bearer #accessToken#">
+        <cfhttpparam type="header" name="Authorization" value="Bearer #tokenData.access_token#">
     </cfhttp>
 
     <cfset userData = deserializeJSON(userResponse.fileContent)>
@@ -53,7 +55,7 @@
     </cfquery>
 
     <cfif checkUser.recordCount EQ 0>
-        <!--- Create new user and capture generated ID --->
+        <!--- Create new user --->
         <cfquery name="createUser" datasource="mydsn" result="insertResult">
             INSERT INTO users (username, email, password, google_id, access_token, refresh_token)
             VALUES (
@@ -61,25 +63,21 @@
                 <cfqueryparam value="#userData.email#" cfsqltype="cf_sql_varchar">,
                 <cfqueryparam value="GOOGLE_USER" cfsqltype="cf_sql_varchar">,
                 <cfqueryparam value="#userData.id#" cfsqltype="cf_sql_varchar">,
-                <cfqueryparam value="#accessToken#" cfsqltype="cf_sql_longvarchar">,
-                <cfqueryparam value="#refreshToken#" cfsqltype="cf_sql_longvarchar">
+                <cfqueryparam value="#accessTokenEncrypted#" cfsqltype="cf_sql_longvarchar">,
+                <cfqueryparam value="#refreshTokenEncrypted#" cfsqltype="cf_sql_longvarchar">
             )
         </cfquery>
-
-        <!--- Capture the new user's ID properly --->
         <cfset userId = insertResult.generatedKey>
-
     <cfelse>
         <!--- Update tokens for existing user --->
         <cfquery name="updateUser" datasource="mydsn">
             UPDATE users
             SET 
-                access_token = <cfqueryparam value="#accessToken#" cfsqltype="cf_sql_longvarchar">,
-                refresh_token = <cfqueryparam value="#refreshToken#" cfsqltype="cf_sql_longvarchar">,
+                access_token = <cfqueryparam value="#accessTokenEncrypted#" cfsqltype="cf_sql_longvarchar">,
+                refresh_token = <cfqueryparam value="#refreshTokenEncrypted#" cfsqltype="cf_sql_longvarchar">,
                 updated_at = NOW()
             WHERE google_id = <cfqueryparam value="#userData.id#" cfsqltype="cf_sql_varchar">
         </cfquery>
-
         <cfset userId = checkUser.id>
     </cfif>
 
