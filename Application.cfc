@@ -10,7 +10,7 @@ component {
 
     function onApplicationStart() {
         // Include environment config
-        include expandPath(".env.cfm");
+        include "env.cfm";
 
         // Map Google keys from environment config
         application.GOOGLECLIENTID = application.env.GOOGLECLIENTID;
