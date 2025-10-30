@@ -7,7 +7,7 @@ component extends="BaseRepository" displayname="ExpenseRepository" hint="Reposit
             SELECT e.id, e.user_id, e.category_id, e.category_name, 
                    e.amount, e.expense_date, e.description, 
                    e.created_at, e.updated_at,
-                   c.color as category_color
+                   COALESCE(c.color, '##FF8C55') as category_color
             FROM expenses e
             LEFT JOIN categories c ON e.category_id = c.id
             WHERE e.user_id = :userId
@@ -29,7 +29,7 @@ component extends="BaseRepository" displayname="ExpenseRepository" hint="Reposit
             SELECT e.id, e.user_id, e.category_id, e.category_name, 
                    e.amount, e.expense_date, e.description, 
                    e.created_at, e.updated_at,
-                   c.color as category_color
+                   COALESCE(c.color, '##FF8C55') as category_color
             FROM expenses e
             LEFT JOIN categories c ON e.category_id = c.id
             WHERE e.id = :id AND e.user_id = :userId

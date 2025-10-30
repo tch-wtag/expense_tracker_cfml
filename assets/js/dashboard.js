@@ -603,6 +603,62 @@ function deleteCategoryViaForm(id) {
     form.submit();
 }
 
+// ============= FILTER FUNCTIONS =============
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchExpense').value.toLowerCase();
+    const categoryFilter = document.getElementById('filterCategory').value;
+    const startDate = document.getElementById('filterStartDate').value;
+    const endDate = document.getElementById('filterEndDate').value;
+    
+    const rows = document.querySelectorAll('#expenseTableBody tr[data-expense-id]');
+    
+    rows.forEach(row => {
+        let show = true;
+        
+        // Search filter
+        if (searchTerm) {
+            const text = row.textContent.toLowerCase();
+            if (!text.includes(searchTerm)) {
+                show = false;
+            }
+        }
+        
+        // Category filter
+        if (categoryFilter && show) {
+            const rowCategory = row.getAttribute('data-category');
+            if (rowCategory !== categoryFilter) {
+                show = false;
+            }
+        }
+        
+        // Date range filter
+        if ((startDate || endDate) && show) {
+            const rowDate = row.getAttribute('data-date');
+            if (startDate && rowDate < startDate) {
+                show = false;
+            }
+            if (endDate && rowDate > endDate) {
+                show = false;
+            }
+        }
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('searchExpense').value = '';
+    document.getElementById('filterCategory').value = '';
+    document.getElementById('filterStartDate').value = '';
+    document.getElementById('filterEndDate').value = '';
+    
+    // Show all rows
+    document.querySelectorAll('#expenseTableBody tr').forEach(row => {
+        row.style.display = '';
+    });
+}
+
 // ============= REPORT FUNCTIONS =============
 
 function generateCustomReport() {

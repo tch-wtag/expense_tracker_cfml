@@ -32,6 +32,15 @@
         </form>
 
         <p>Already have an account? <a href="/views/auth/login.cfm">Login here</a></p>
+
+        <!--- Google Signup Button --->
+        <div class="google-auth">
+            <p>or</p>
+            <a href="/controllers/googleSignup.cfm" class="btn">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo">
+                Sign up with Google
+            </a>
+        </div>
     </div>
 </section>
 

@@ -157,6 +157,43 @@
                 <h3>Daily Spending (Last 7 Days)</h3>
                 <img src="/assets/images/daily-spending.png" alt="Daily Spending Chart">
             </div>
+
+            <!-- Top Expenses -->
+            <div class="card">
+                <h3>Top Expenses (Last 30 Days)</h3>
+                <cfquery name="topExpenses" dbtype="query" maxrows="5">
+                    SELECT *
+                    FROM allExpenses
+                    WHERE expense_date >= <cfqueryparam value="#last30Days#" cfsqltype="cf_sql_date">
+                    ORDER BY amount DESC
+                </cfquery>
+                
+                <cfif topExpenses.recordCount GT 0>
+                    <div class="expense-list">
+                        <cfloop query="topExpenses">
+                            <div class="expense-item">
+                                <div class="expense-icon">
+                                    <cfoutput>
+                                        <span class="color-dot" style="background: #topExpenses.category_color#;"></span>
+                                    </cfoutput>
+                                </div>
+                                <div class="expense-details">
+                                    <cfoutput>
+                                        <h4>#topExpenses.category_name#</h4>
+                                        <p class="expense-desc">#topExpenses.description#</p>
+                                        <span class="expense-date">#dateFormat(topExpenses.expense_date, "mmm dd, yyyy")#</span>
+                                    </cfoutput>
+                                </div>
+                                <cfoutput>
+                                    <div class="expense-amount">৳#numberFormat(topExpenses.amount, "9,999.99")#</div>
+                                </cfoutput>
+                            </div>
+                        </cfloop>
+                    </div>
+                <cfelse>
+                    <p class="empty-state">No expenses in the last 30 days</p>
+                </cfif>
+            </div>
         </cfif>
     </div>
 </section>
