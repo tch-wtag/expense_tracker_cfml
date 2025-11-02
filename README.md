@@ -81,7 +81,7 @@ Built with **Lucee CFML**, **MariaDB**, and a clean **HTML/CSS** frontend.
    ```
    http://127.0.0.1:8888/controllers/googleCallback.cfm
    ```
-5. Copy the **Client ID** and **Client Secret**, then create a new file `.env.cfm` with the following content:
+5. Copy the **Client ID** and **Client Secret**, then create a new file `env.cfm` with the following content:
 
    ```cfml
    <cfscript>
