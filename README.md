@@ -93,10 +93,15 @@ Built with **Lucee CFML**, **MariaDB**, and a clean **HTML/CSS** frontend.
    };
    </cfscript>
    ```
-
 > ⚠️ **Important Notes**
 >
-> * Do **not** commit `.env.cfm` to version control.
+> * Do **not** commit `env.cfm` to version control.
 > * Add it to `.gitignore`.
-> * Use a strong, random value for `SECRET_KEY`.
-> * The `assets/images/` folder is also ignored in Git since it stores uploaded or temporary files — it will be created automatically when needed.
+> * Use a strong, random **32-byte (256-bit)** value for `SECRET_KEY`.
+>   For example, you can generate one using:
+>
+>   ```bash
+>   openssl rand -base64 32
+>   ```
+> * The `assets/images/` folder is also ignored in Git since it stores uploaded or temporary files — it will be created automatically when needed
+
